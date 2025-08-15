@@ -1,4 +1,6 @@
 const express = require("express");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const app = express();
 
@@ -18,11 +20,18 @@ app.use("/api/v1/admin", adminRouter);
 */
 
 
+async function main(){
+    //we should not put the mongoose url in the code like that we should use dotenv
+    await mongoose.connect(process.env.mongoose_url);
 
-
-
-
-
-app.listen(3000, () => {
+    app.listen(3000, () => {
     console.log("listening at port 3000");
-});
+    });
+}
+
+main();
+
+
+
+
+//I should put this mongoose.connect line before the app.listen because if we didn't start our db the backend will never start

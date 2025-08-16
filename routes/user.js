@@ -1,4 +1,5 @@
 const express = require("express");
+const { userModel } = require("../db");
 
 const Router = express.Router();
 
@@ -6,10 +7,20 @@ const Router = express.Router();
 
 const userRouter = Router;
 
+
 userRouter.post("/signup", (req, res) => {
+    const { email, password , firstName, lastName } = req.body;
+
+    await userModel.create({
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName
+    })
+
     res.json({
-        msg: "You are in user signup"
-    });
+        msg: "signup successfull"
+    })
 });
 
 userRouter.post("/signin", (req, res) => {

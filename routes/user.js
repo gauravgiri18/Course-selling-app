@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { userModel } = require("../db");
 const { z, email } = require("zod");
+require("dotenv").config();
 
 const Router = express.Router();
 
@@ -67,9 +68,44 @@ userRouter.post("/signup", async (req, res) => {
 });
 
 userRouter.post("/signin", async (req, res) => {
-    const {emain, password} = req.body;
-    
-    
+    try{
+        const {email, password} = req.body;
+
+        if(!email || !password){
+            return res.status(400).json({ error: "Email and password are required." });
+        }
+
+        const user = await userModel.findOne({
+            email: email
+        })
+        if(!user){
+            return res.status(403).json({
+                error: "This email is not registered please signup"
+            })
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        
+        if(passwordMatch){
+            const token = jwt.sign({
+                id: user._id
+            }, process.env.secretKey);
+
+            res.json({
+                token
+            });
+        } else {
+            res.status(403).json({
+                error: "Incorrect credentials"
+            });
+        }
+    } catch(err) {
+        console.log(err);
+        res.status(502).json({
+            error: "There is some error in signin :( Please try again later"
+        });
+    }
 
 });
 

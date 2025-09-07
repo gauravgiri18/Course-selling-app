@@ -90,7 +90,9 @@ userRouter.post("/signin", async (req, res) => {
         if(passwordMatch){
             const token = jwt.sign({
                 id: user._id
-            }, process.env.secretKey);
+            }, process.env.userSecretKey);
+
+            res.setHeader('authorization', `Bearer ${token}`);
 
             res.json({
                 token

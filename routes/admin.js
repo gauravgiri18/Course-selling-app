@@ -140,13 +140,70 @@ adminRouter.post("/course",adminMiddleware, async (req, res) => {
 });
 
 
-adminRouter.put("/course", (req, res) => {
+adminRouter.put("/course", adminMiddleware, async(req, res) => {
+
+    try {
+        const adminId = req.userId;
+
+        const { title, price, description, imageURL, courseId} = req.body;
+
+        const c = await coursesModel.findOne({
+            _id: courseId
+        });
+
+        if(c.creatorId != adminId){
+            return res.status(403).json({
+                error: "You are trying to get some invalid course"
+            })
+
+        }
+
+        const course = await coursesModel.updateOne({
+            _id: courseId,
+            creatorId: adminId // this is because only the creator can update its course nobody else
+        }, {
+            title: title,
+            price: price,
+            imageUrl: imageURL,
+            description: description
+        })
+
+        //console.log(course);
+
+        res.status(200).json({
+            msg: "Course updated Successfully"
+        })
+
+
+    } catch(err){
+        console.log(err);
+        res.status(403).json({
+            error: "There is some error in updating the course"
+        })
+    }
 
 });
 
 
-adminRouter.get("/course/bulk", (req, res) => {
+adminRouter.get("/course/bulk", adminMiddleware, async(req, res) => {
+    try {
+        const adminId = req.userId;
 
+    const courses = await coursesModel.find({
+            creatorId: adminId
+    })
+
+        res.status(200).json({
+            msg: "Success",
+            courses
+        })
+
+    } catch(err){
+        console.log(err);
+        res.status(403).json({
+            error: "There is an error getting all the courses information"
+        })
+    }
 });
 
 module.exports = {

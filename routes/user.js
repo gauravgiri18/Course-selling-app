@@ -1,8 +1,9 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { userModel } = require("../db");
+const { userModel, purchasesModel, coursesModel } = require("../db");
 const { z, email } = require("zod");
+const { userMiddleware } = require("../middleware/user");
 require("dotenv").config();
 
 const Router = express.Router();
@@ -111,10 +112,30 @@ userRouter.post("/signin", async (req, res) => {
 
 });
 
-userRouter.get("/purchases", (req, res) => {
-    res.json({
-        msg: "You are in user puchases"
-    });
+userRouter.get("/purchases", userMiddleware, async (req, res) => {
+    try {
+
+        const userId = req.userId;
+
+        const purchases = await purchasesModel.find({
+            userId
+        })
+
+        const courseData = await coursesModel.find({
+            _id: { $in: purchases.map(x=> x.courseId)}
+        })
+
+        res.status(200).json({
+            purchases,
+            courseData
+        })
+
+    } catch(err){
+        console.log(err);
+        res.status(403). json ({
+            error: "There is some error in to show your purchases the course"
+        })
+    }
 });
 
 

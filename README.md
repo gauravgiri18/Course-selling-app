@@ -22,50 +22,44 @@ This Course Selling App is a robust backend-focused platform designed to facilit
 
 ### Core Features
 - 🔐 **User Authentication & Authorization**
-  - Secure user registration and login
-  - Role-based access control (Admin, Instructor, Student)
+  - Secure user registration and login for both students and admins
+  - Role-based access control (Admin, Student)
   - JWT token-based authentication
+  - Password hashing with bcrypt
 
 - 📚 **Course Management**
-  - Create, update, and delete courses
-  - Course categorization and tagging
-  - Rich course descriptions and metadata
-  - Course pricing and discount management
+  - Create and manage courses (Admin only)
+  - Course previews for all users
+  - Rich course descriptions, pricing, and images
+  - Admin course bulk retrieval
 
-- 🛒 **Shopping & Payment**
-  - Shopping cart functionality
-  - Secure payment processing
-  - Order history and receipts
-  - Refund management
+- 🛒 **Shopping & Purchases**
+  - Course purchase functionality
+  - Purchase history tracking
+  - Duplicate purchase prevention
+  - User enrollment tracking
 
 - 👥 **User Management**
-  - User profiles and preferences
-  - Course enrollment tracking
-  - Progress monitoring
-  - Certificate generation
-
-- 📊 **Analytics & Reporting**
-  - Sales analytics
-  - User engagement metrics
-  - Course performance reports
-  - Revenue tracking
+  - Separate user and admin accounts
+  - User profile management
+  - Purchase history access
 
 ## 🛠 Tech Stack
 
 - **Runtime:** Node.js
 - **Language:** JavaScript
-- **Framework:** [Express.js/Fastify/etc.  - specify your framework]
-- **Database:** [MongoDB/PostgreSQL/MySQL - specify your database]
-- **Authentication:** JWT
-- **Payment Processing:** [Stripe/PayPal/Razorpay - specify if implemented]
-- **Cloud Storage:** [AWS S3/Cloudinary - if used for course materials]
+- **Framework:** Express.js
+- **Database:** MongoDB (with Mongoose ODM)
+- **Authentication:** JWT (JSON Web Tokens)
+- **Password Hashing:** bcrypt
+- **Validation:** Zod
 
 ## 🚀 Installation
 
 ### Prerequisites
 - Node.js (v14.0.0 or higher)
 - npm or yarn
-- [Database] (specify version)
+- MongoDB
 
 ### Setup Instructions
 
@@ -78,112 +72,185 @@ This Course Selling App is a robust backend-focused platform designed to facilit
 2. **Install dependencies**
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
 3. **Environment Configuration**
-   Create a `.env` file in the root directory:
+   Create a `.env` file in the root directory: 
    ```env
    PORT=3000
-   NODE_ENV=development
-   DATABASE_URL=your_database_connection_string
-   JWT_SECRET=your_jwt_secret_key
-   PAYMENT_GATEWAY_KEY=your_payment_gateway_key
-   EMAIL_SERVICE_API_KEY=your_email_service_key
+   mongoose_url=your_mongodb_connection_string
+   userSecretKey=your_user_jwt_secret_key
+   adminSecretKey=your_admin_jwt_secret_key
    ```
 
-4. **Database Setup**
+4. **Start the application**
    ```bash
-   # Run database migrations (if applicable)
-   npm run migrate
-   
-   # Seed initial data (if applicable)
-   npm run seed
+   node index.js
    ```
 
-5. **Start the application**
-   ```bash
-   # Development mode
-   npm run dev
-   
-   # Production mode
-   npm start
-   ```
-
-The server will start running on `http://localhost:3000` (or your specified port).
+The server will start running on `http://localhost:3000`.
 
 ## 📖 Usage
 
-### For Course Creators
-1. Register as an instructor
-2. Create and publish courses
-3. Set pricing and manage content
-4. Track sales and student engagement
-
 ### For Students
-1. Browse available courses
-2. Purchase courses securely
-3. Access course materials
-4. Track learning progress
+1. Sign up for a student account via `/api/v1/user/signup`
+2. Sign in to get authentication token
+3. Browse available courses via `/api/v1/course/preview`
+4. Purchase courses securely
+5. View purchase history
 
-### For Administrators
-1. Manage all users and courses
-2. Handle payments and refunds
-3. Generate reports and analytics
-4. System configuration
+### For Admins
+1. Sign up for an admin account via `/api/v1/admin/signup`
+2. Sign in to get authentication token
+3. Create and manage courses
+4. View all created courses
+5. Update course information
 
 ## 📚 API Documentation
 
-### Authentication Endpoints
+### User Authentication Endpoints
+**Base URL:** `/api/v1/user`
 ```
-POST /api/auth/register - User registration
-POST /api/auth/login - User login
-POST /api/auth/logout - User logout
-POST /api/auth/refresh - Refresh JWT token
+POST /signup - User registration
+POST /signin - User login
+GET /purchases - Get user's purchased courses (requires authentication)
+```
+
+### Admin Authentication Endpoints  
+**Base URL:** `/api/v1/admin`
+```
+POST /signup - Admin registration  
+POST /signin - Admin login
+POST /course - Create new course (requires admin authentication)
+PUT /course - Update existing course (requires admin authentication)
+GET /course/bulk - Get all courses created by admin (requires admin authentication)
 ```
 
 ### Course Endpoints
+**Base URL:** `/api/v1/course`
 ```
-GET /api/courses - Get all courses
-GET /api/courses/:id - Get specific course
-POST /api/courses - Create new course (Instructor only)
-PUT /api/courses/:id - Update course (Instructor only)
-DELETE /api/courses/:id - Delete course (Instructor only)
+GET /preview - Get all available courses (public access)
+POST /purchase - Purchase a course (requires user authentication)
 ```
 
-### User Endpoints
+### Authentication Headers
+All protected routes require an `Authorization` header:
 ```
-GET /api/users/profile - Get user profile
-PUT /api/users/profile - Update user profile
-GET /api/users/courses - Get user's enrolled courses
-POST /api/users/enroll - Enroll in a course
+Authorization: Bearer <your-jwt-token>
 ```
 
-### Payment Endpoints
+### Request/Response Examples
+
+#### User Signup
+```javascript
+POST /api/v1/user/signup
+Content-Type: application/json
+
+{
+  "email": "student@example.com",
+  "password": "securepassword",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+// Response
+{
+  "msg": "You have successfully created an account"
+}
 ```
-POST /api/payments/create - Create payment intent
-POST /api/payments/confirm - Confirm payment
-GET /api/payments/history - Get payment history
+
+#### Admin Create Course
+```javascript
+POST /api/v1/admin/course
+Content-Type: application/json
+Authorization: Bearer <admin-jwt-token>
+
+{
+  "title": "JavaScript Fundamentals",
+  "description": "Learn JavaScript from basics to advanced",
+  "imageURL": "https://example.com/course-image.jpg",
+  "price": 99
+}
+
+// Response
+{
+  "message": "Course Created",
+  "courseId": "course_id_here"
+}
+```
+
+#### Purchase Course
+```javascript
+POST /api/v1/course/purchase
+Content-Type: application/json
+Authorization: Bearer <user-jwt-token>
+
+{
+  "courseId": "course_id_here"
+}
+
+// Response
+{
+  "msg": "The course is successfully bought"
+}
 ```
 
 ## 📁 Project Structure
 
 ```
 Course-selling-app/
-├── src/
-│   ├── controllers/         # Route controllers
-│   ├── models/             # Data models
-│   ├── middleware/         # Custom middleware
-│   ├── routes/             # API routes
-│   ├── services/           # Business logic
-│   ├── utils/              # Helper functions
-│   └── config/             # Configuration files
-├── tests/                  # Test files
-├── docs/                   # Documentation
-├── .env. example           # Environment variables template
+├── routes/
+│   ├── user.js             # User authentication and purchase routes
+│   ├── admin.js            # Admin authentication and course management
+│   └── course. js           # Course preview and purchase endpoints
+├── middleware/
+│   ├── user. js             # User authentication middleware
+│   └── admin.js            # Admin authentication middleware  
+├── db. js                   # Database models and connection
+├── index.js                # Main application entry point
 ├── package.json
 └── README.md
+```
+
+## 🔧 Database Models
+
+### User Model
+```javascript
+{
+  email: String (unique),
+  password: String (hashed),
+  firstName: String,
+  lastName: String
+}
+```
+
+### Admin Model  
+```javascript
+{
+  email: String (unique),
+  password: String (hashed),
+  firstName: String,
+  lastName:  String
+}
+```
+
+### Course Model
+```javascript
+{
+  title: String,
+  description:  String,
+  price: Number,
+  imageUrl: String,
+  creatorId: ObjectId (references admin)
+}
+```
+
+### Purchase Model
+```javascript
+{
+  courseId: [ObjectId] (references course),
+  userId: [ObjectId] (references user)
+}
 ```
 
 ## 🤝 Contributing
@@ -202,26 +269,23 @@ We welcome contributions to improve the Course Selling App! Please follow these 
 - Update documentation for any API changes
 - Use meaningful commit messages
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-If you have any questions or need support: 
+If you have any questions or need support:  
 
 - Create an issue in this repository
-- Contact:  [your-email@example.com]
-- Documentation: [Link to detailed docs if available]
+- Contact:  [gauravv9958@gmail.com]
 
 ## 🚧 Roadmap
 
-- [ ] Mobile app integration
-- [ ] Advanced analytics dashboard
-- [ ] Multi-language support
-- [ ] Live streaming capabilities
-- [ ] AI-powered course recommendations
-- [ ] Integration with popular learning management systems
+- [ ] Payment gateway integration
+- [ ] Course content management (videos, documents)
+- [ ] User progress tracking
+- [ ] Course ratings and reviews
+- [ ] Advanced search and filtering
+- [ ] Email notifications
+- [ ] Admin analytics dashboard
 
 ---
 
